@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+
+group = 'com.minimal_example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add("-parameters")
+}
+
+java {
+    sourceCompatibility = '21'
+}
+
+
+sourceSets {
+    integration {
+        java.srcDir "$projectDir/src/integration/java"
+        resources.srcDir "$projectDir/src/integration/resources"
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    testClassesDirs = sourceSets.integration.output.classesDirs
+    classpath = sourceSets.integration.runtimeClasspath
+}
+
+configurations {
+    integrationImplementation.extendsFrom testImplementation
+    integrationRuntime.extendsFrom testRuntime
+}
+
+check.dependsOn integrationTest
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc:'
+    implementation 'org.postgresql:postgresql'
+    implementation 'org.flywaydb:flyway-core'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    testImplementation 'org.testcontainers:junit-jupiter'
+
+    integrationImplementation 'org.springframework.boot:spring-boot-starter-test'
+    integrationImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    integrationImplementation 'org.testcontainers:postgresql'
+    integrationImplementation 'org.testcontainers:junit-jupiter'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+integrationTest {
+    useJUnitPlatform()
+}
+
+processIntegrationResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
